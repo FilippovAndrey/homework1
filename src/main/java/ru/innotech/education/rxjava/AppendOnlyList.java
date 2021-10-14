@@ -44,7 +44,7 @@ public class AppendOnlyList<T> extends AbstractCollection<T>
     }
 
     @Override
-    public Iterator<T> iterator() {
+    public synchronized Iterator<T> iterator() {
         /*List<T> tempList = new ArrayList<>();
 
         for (T temp : elementData) {
@@ -66,7 +66,7 @@ public class AppendOnlyList<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean add(T t) {
+    public synchronized boolean add(T t) {
         elementData.add(t);
         listOfDelete.add(false);
         countList++;
@@ -74,7 +74,7 @@ public class AppendOnlyList<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean remove(Object o) {
+    public synchronized boolean remove(Object o) {
         for (int i = 0; i < elementData.size(); i++) {
             if (elementData.get(i).equals(o) && !listOfDelete.get(i)) {
                 listOfDelete.set(i, true);
