@@ -1,8 +1,9 @@
 package ru.innotech.education.rxjava;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class AppendOnlyList<T>
+public class AppendOnlyList<T> extends AbstractCollection<T>
         implements Collection<T> {
     private final List<T> elementData;
     private final List<Boolean> listOfDelete;
@@ -16,27 +17,22 @@ public class AppendOnlyList<T>
     public AppendOnlyList(Collection<T> c) {
         this();
         addAll(c);
-
     }
 
     @Override
     public int size() {
-        countList = 0;
+        /*countList = 0;
         for (Boolean i : listOfDelete) {
             if (!i) {
                 countList++;
             }
-        }
+        }*/
         return countList;
     }
 
     @Override
     public boolean isEmpty() {
-        if (listOfDelete.isEmpty()) return true;
-        for (Boolean i : listOfDelete) {
-            if (!i) return false;
-        }
-        return true;
+        return size() == 0;
     }
 
     @Override
@@ -51,30 +47,29 @@ public class AppendOnlyList<T>
     public Iterator<T> iterator() {
         /*List<T> tempList = new ArrayList<>();
 
-        for(T temp : list){
-
+        for (T temp : elementData) {
+            if (contains(temp))
+                tempList.add(temp);
         }*/
-        return elementData.iterator();
+        return elementData.stream().filter(this::contains).collect(Collectors.toList()).iterator();
+                //tempList.iterator();
     }
 
     @Override
     public Object[] toArray() {
-        throw new UnsupportedOperationException("Not Implemented toArray");
+        return elementData.stream().filter(this::contains).toArray();
     }
 
     @Override
     public <K> K[] toArray(K[] a) {
-        throw new UnsupportedOperationException("Not Implemented toArray K");
+        return (K[]) elementData.stream().filter(this::contains).collect(Collectors.toList()).toArray(a);
     }
 
     @Override
     public boolean add(T t) {
-        try {
-            elementData.add(t);
-            listOfDelete.add(false);
-        } catch (Exception e) {
-            return false;
-        }
+        elementData.add(t);
+        listOfDelete.add(false);
+        countList++;
         return true;
     }
 
@@ -83,6 +78,7 @@ public class AppendOnlyList<T>
         for (int i = 0; i < elementData.size(); i++) {
             if (elementData.get(i).equals(o) && !listOfDelete.get(i)) {
                 listOfDelete.set(i, true);
+                countList--;
                 return true;
             }
         }
@@ -91,23 +87,17 @@ public class AppendOnlyList<T>
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        boolean findElement;
         for (Object element : c) {
-            findElement = false;
-            for (int i = 0; i < elementData.size(); i++) {
-                if (elementData.get(i).equals(element) && !listOfDelete.get(i)) {
-                    findElement = true;
-                    break;
-                }
+            if(!contains(element)){
+                return false;
             }
-            if (!findElement) return false;
         }
         return true;
     }
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        for(T t : c){
+        for (T t : c) {
             add(t);
         }
         return true;
@@ -117,32 +107,41 @@ public class AppendOnlyList<T>
     public boolean removeAll(Collection<?> c) {
         boolean findElement = false;
         for (Object element : c) {
-            for (int i = 0; i < elementData.size(); i++) {
-                if (elementData.get(i).equals(element) && !listOfDelete.get(i)) {
-                    listOfDelete.set(i, true);
-                    findElement = true;
-                }
-            }
+            if(remove(element))
+                findElement = true;
         }
         return findElement;
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        for(Object t : c){
-            for(int i = 0; i < elementData.size(); i++) {
-                if(elementData.get(i).equals(c) && !listOfDelete.get(i)){
-
-                }
+        /*boolean findElement = false;
+        for(int i = 0; i < elementData.size(); i ++){
+            for(Object t : c) {
+                if(!contains(t))
             }
         }
-        return true;
+        for (Object t : c) {
+            if(!contains(t)){
+                remove(t);
+                findElement = true;
+            }
+        }
+        return findElement;*/
+
+        Objects.requireNonNull(c);
+        boolean findElement = false;
+        for (Object o : this) {
+            if (!c.contains(o)) {
+                remove(o);
+                findElement = true;
+            }
+        }
+        return findElement;
     }
 
     @Override
     public void clear() {
-        for(Boolean i : listOfDelete){
-            
-        }
+        removeAll(elementData);
     }
 }
