@@ -8,6 +8,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
         implements Collection<T> {
     private final List<Map.Entry<T, Boolean>> elementData;
     private final AtomicInteger countList = new AtomicInteger(0);
+    private final Object sync = new Object();
 
     public AppendOnlyListOfMap() {
         this.elementData = new ArrayList<>();
@@ -38,7 +39,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public synchronized Iterator<T> iterator() {
+    public Iterator<T> iterator() {
         return new Itr();
     }
 
@@ -60,19 +61,23 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public synchronized boolean add(final T t) {
-        elementData.add(Map.entry(t, false));
-        countList.incrementAndGet();
-        return true;
+    public boolean add(final T t) {
+        synchronized (sync) {
+            elementData.add(Map.entry(t, false));
+            countList.incrementAndGet();
+            return true;
+        }
     }
 
     @Override
-    public synchronized boolean remove(final Object o) {
-        final int idx = elementData.indexOf(Map.entry(o, false));
-        if (idx < 0) return false;
-        elementData.set(idx, Map.entry((T) o, true));
-        countList.decrementAndGet();
-        return true;
+    public boolean remove(final Object o) {
+        synchronized (sync) {
+            final int idx = elementData.indexOf(Map.entry(o, false));
+            if (idx < 0) return false;
+            elementData.set(idx, Map.entry((T) o, true));
+            countList.decrementAndGet();
+            return true;
+        }
     }
 
     @Override
@@ -131,7 +136,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
         @Override
         public boolean hasNext() {
-            synchronized (this) {
+            synchronized (sync) {
                 for (int n = cursor; n < elementData.size(); n++) {
                     if (elementData.get(n).getValue()) continue;
                     lastObj = n;
@@ -143,7 +148,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
         @Override
         public T next() {
-            synchronized (this) {
+            synchronized (sync) {
                 if (cursor >= elementData.size())
                     throw new NoSuchElementException();
                 int i = cursor;
