@@ -1,25 +1,26 @@
 package ru.innotech.education.rxjava;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
         implements Collection<T> {
     private final List<Map.Entry<T, Boolean>> elementData;
-    private int countList;
+    private final AtomicInteger countList = new AtomicInteger(0);
 
     public AppendOnlyListOfMap() {
         this.elementData = new ArrayList<>();
     }
 
-    public AppendOnlyListOfMap(Collection<T> c) {
+    public AppendOnlyListOfMap(final Collection<T> c) {
         this();
         addAll(c);
     }
 
     @Override
     public int size() {
-        return countList;
+        return countList.get();
     }
 
     @Override
@@ -28,7 +29,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean contains(Object o) {
+    public boolean contains(final Object o) {
         for (Map.Entry<T, Boolean> elementDatum : elementData) {
             if (elementDatum.getKey().equals(o) && !elementDatum.getValue())
                 return true;
@@ -50,7 +51,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public <K> K[] toArray(K[] a) {
+    public <K> K[] toArray(final K[] a) {
         return new ArrayList<>(elementData).stream()
                 .map(Map.Entry::getKey)
                 .filter(this::contains)
@@ -59,23 +60,23 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public synchronized boolean add(T t) {
+    public synchronized boolean add(final T t) {
         elementData.add(Map.entry(t, false));
-        countList++;
+        countList.incrementAndGet();
         return true;
     }
 
     @Override
-    public synchronized boolean remove(Object o) {
+    public synchronized boolean remove(final Object o) {
         int idx = elementData.indexOf(Map.entry(o, false));
         if (idx < 0) return false;
         elementData.set(idx, Map.entry((T) o, true));
-        countList--;
+        countList.decrementAndGet();
         return true;
     }
 
     @Override
-    public boolean containsAll(Collection<?> c) {
+    public boolean containsAll(final Collection<?> c) {
         for (Object element : c) {
             if (!contains(element)) {
                 return false;
@@ -85,7 +86,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean addAll(Collection<? extends T> c) {
+    public boolean addAll(final Collection<? extends T> c) {
         for (T t : c) {
             add(t);
         }
@@ -93,7 +94,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
+    public boolean removeAll(final Collection<?> c) {
         boolean findElement = false;
         for (Object element : c) {
             if (remove(element))
@@ -103,7 +104,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public boolean retainAll(final Collection<?> c) {
         Objects.requireNonNull(c);
         boolean findElement = false;
         for (Object o : this) {
@@ -122,20 +123,22 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
 
     private final class Itr implements Iterator<T> {
-        volatile int cursor = 0;
-        int lastObj = -1;
+        private volatile int cursor = 0;
+        private int lastObj = -1;
 
         Itr() {
         }
 
         @Override
         public boolean hasNext() {
-            for (int n = cursor; n < elementData.size(); n++) {
-                if (elementData.get(n).getValue()) continue;
-                lastObj = n;
-                return true;
+            synchronized (this) {
+                for (int n = cursor; n < elementData.size(); n++) {
+                    if (elementData.get(n).getValue()) continue;
+                    lastObj = n;
+                    return true;
+                }
+                return false;
             }
-            return false;
         }
 
         @Override
