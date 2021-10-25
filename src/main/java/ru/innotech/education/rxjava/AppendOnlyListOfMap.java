@@ -30,7 +30,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
     @Override
     public boolean contains(final Object o) {
-        for (Map.Entry<T, Boolean> elementDatum : elementData) {
+        for (final Map.Entry<T, Boolean> elementDatum : elementData) {
             if (elementDatum.getKey().equals(o) && !elementDatum.getValue())
                 return true;
         }
@@ -68,7 +68,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
     @Override
     public synchronized boolean remove(final Object o) {
-        int idx = elementData.indexOf(Map.entry(o, false));
+        final int idx = elementData.indexOf(Map.entry(o, false));
         if (idx < 0) return false;
         elementData.set(idx, Map.entry((T) o, true));
         countList.decrementAndGet();
@@ -77,7 +77,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
     @Override
     public boolean containsAll(final Collection<?> c) {
-        for (Object element : c) {
+        for (final Object element : c) {
             if (!contains(element)) {
                 return false;
             }
@@ -87,7 +87,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
 
     @Override
     public boolean addAll(final Collection<? extends T> c) {
-        for (T t : c) {
+        for (final T t : c) {
             add(t);
         }
         return true;
@@ -96,7 +96,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     @Override
     public boolean removeAll(final Collection<?> c) {
         boolean findElement = false;
-        for (Object element : c) {
+        for (final Object element : c) {
             if (remove(element))
                 findElement = true;
         }
@@ -107,7 +107,7 @@ public class AppendOnlyListOfMap<T> extends AbstractCollection<T>
     public boolean retainAll(final Collection<?> c) {
         Objects.requireNonNull(c);
         boolean findElement = false;
-        for (Object o : this) {
+        for (final Object o : this) {
             if (!c.contains(o)) {
                 remove(o);
                 findElement = true;
